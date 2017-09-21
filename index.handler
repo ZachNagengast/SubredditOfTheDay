@@ -1,0 +1,61 @@
+var https = require('https');
+
+exports.handler = (event, context, callback) => {
+
+    var body='';
+    var jsonObject = JSON.stringify(event);
+
+    // the post options
+    var options = {
+        host: 'www.reddit.com',
+        path: '/r/subredditoftheday/new.json?limit=1',
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        json:true
+    };
+
+    var req = https.request(options, function(res){
+        // console.log("statusCode: ", res.statusCode);
+        res.on('data', function (chunk) {
+            body += chunk;
+        });
+        
+        res.on('end', function (){
+            jsonObject = JSON.parse(body);
+            var subredditTitle = jsonObject.data.children[0].data.title;
+            var timestamp = new Date(jsonObject.data.children[0].data.created_utc*1000);
+            var date = timestamp.getUTCFullYear();
+            date += timestamp.getUTCMonth() > 8 ? '-' : '-0';
+            date += timestamp.getUTCMonth() + 1; 
+            date += '-';
+            date += timestamp.getUTCDate();
+            
+            console.log('month: ', timestamp);
+            
+            const response = {
+                statusCode: 200,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    uid: 'SUBREDDIT_OF_THE_DAY_FEED_ITEM_'+jsonObject.data.children[0].data.name,
+                    updateDate: date + 'T00:00:00.0Z',
+                    titleText: 'SOTD: '+jsonObject.data.children[0].data.title,
+                    mainText: 'for '+jsonObject.data.children[0].data.title,
+                    redirectionUrl: jsonObject.data.children[0].data.url
+                }),
+            };
+
+            callback(null, response);
+            
+        });
+    });
+    
+    req.on('error', function(e) {
+        console.log('Problem with request: ' + e.message);
+    });
+
+    req.end();
+};
