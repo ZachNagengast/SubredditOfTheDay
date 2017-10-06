@@ -29,7 +29,7 @@ exports.handler = (event, context, callback) => {
             var date = timestamp.getUTCFullYear();
             date += timestamp.getUTCMonth() > 8 ? '-' : '-0';
             date += timestamp.getUTCMonth() + 1; 
-            date += '-';
+            date += timestamp.getUTCDate() > 9 ? '-' : '-0';
             date += timestamp.getUTCDate();
             
             console.log('month: ', timestamp);
